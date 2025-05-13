@@ -79,7 +79,8 @@ Se abrirá una ventana que te permite:
 
 ```txt
 programa ejemplo@;
-entero a&, b&, suma&;
+variables
+   entero a&, b&, suma&;
 inicio
     leer(a&);
     leer(b&);
