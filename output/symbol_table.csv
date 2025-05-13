@@ -1,0 +1,10 @@
+Nombre,Tipo,Ámbito,Valor
+a&,entero,global,
+b&,entero,global,
+suma&,entero,global,
+num%,real,global,
+c%,real,global,
+d%,real,global,
+letra$,cadena,global,
+texto$,cadena,global,
+bandera#,logico,global,

@@ -1,0 +1,28 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Archivos de configuración de entorno
+.env
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de salida
+*.log
+
+# Archivos de editor
+.vscode/
+.idea/
+
+# Archivos de prueba
+*.test
+coverage/
+htmlcov/

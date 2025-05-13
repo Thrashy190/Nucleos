@@ -1,0 +1,42 @@
+programa ejemplo@;
+variables
+    entero a&, b&, suma&;
+    real num%, c%, d%;
+    cadena letra$, texto$;
+    logico bandera#;
+
+inicio
+    leer(a&);
+    leer(b&);
+    suma& = a& + b&;
+    escribir(suma&);
+
+    si (a& > b&) entonces
+    inicio
+        escribir(a&);
+    fin
+    sino
+    inicio
+        escribir(b&);
+    fin
+
+    mientras (b& < 10) hacer
+    inicio
+        b& = b& + 1;
+        escribir(b&);
+    fin
+
+    repetir
+    inicio
+        escribir(letra$);
+        letra$ = "nueva";
+    fin
+    hasta (letra$ == "nueva");
+
+    num% = 3.14;
+    texto$ = "hola mundo";
+    bandera# = true;
+    escribir(texto$);
+    escribir(num%);
+    escribir(bandera#);
+fin

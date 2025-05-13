@@ -1,0 +1,9 @@
+Operación,Arg1,Arg2,Resultado
++,a&,b&,t0
+=,t0,,suma&
++,b&,1,t1
+=,t1,,b&
+=,"""nueva""",,letra$
+=,3.14,,num%
+=,"""hola mundo""",,texto$
+=,true,,bandera#
