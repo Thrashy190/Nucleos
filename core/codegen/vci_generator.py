@@ -2,13 +2,45 @@ from models.vci_instruction import VCIInstruction
 from models.ast_node import ASTNode
 
 class VCIGenerator:
-    def __init__(self):
+    def _init_(self):
         self.instructions = []
         self.temp_count = 0
         self.label_count = 0
 
     def generate(self, node: ASTNode):
-        if node.type == "ASIGNACION":
+        if node is None:
+            return
+
+        if node.type == "PROGRAMA":
+            # Procesar todo el programa
+            for child in node.children:
+                self.generate(child)
+
+        elif node.type == "DECLARACIONES":
+            # Las declaraciones no generan código intermedio directamente
+            pass
+
+        elif node.type == "BLOQUE":
+            # Procesar todas las instrucciones del bloque
+            for child in node.children:
+                self.generate(child)
+
+        elif node.type == "INSTRUCCIONES":
+            # Procesar cada instrucción
+            for child in node.children:
+                self.generate(child)
+
+        elif node.type == "LEER":
+            # Generar instrucción de lectura
+            var = node.children[0].value
+            self.instructions.append(VCIInstruction("READ", "", "", var))
+
+        elif node.type == "ESCRIBIR":
+            # Generar instrucción de escritura
+            expr = self.evaluate_expr(node.children[0].children[0])
+            self.instructions.append(VCIInstruction("WRITE", expr, "", ""))
+
+        elif node.type == "ASIGNACION":
             target = node.children[0].value
             value_expr = node.children[1]
             result = self.evaluate_expr(value_expr.children[0])
@@ -27,6 +59,8 @@ class VCIGenerator:
             label_else = self.new_label()
             label_end = self.new_label()
             self.instructions.append(VCIInstruction("IF_FALSE", cond, "", f"GOTO {label_else}"))
+            
+            # Generar código para el bloque SI
             self.generate(node.children[1])  # BLOQUE_SI
             if len(node.children) == 3:
                 self.instructions.append(VCIInstruction("GOTO", "", "", label_end))
@@ -40,6 +74,8 @@ class VCIGenerator:
             label_start = self.new_label()
             label_end = self.new_label()
             self.instructions.append(VCIInstruction("LABEL", "", "", label_start))
+            
+            # Evaluar condición
             cond = self.evaluate_expr(node.children[0].children[0])
             self.instructions.append(VCIInstruction("IF_FALSE", cond, "", f"GOTO {label_end}"))
             self.generate(node.children[1])  # CUERPO
@@ -48,6 +84,8 @@ class VCIGenerator:
 
         elif node.type == "REPETIR":
             label_start = self.new_label()
+            
+            # Etiqueta de inicio
             self.instructions.append(VCIInstruction("LABEL", "", "", label_start))
             self.generate(node.children[0])  # CUERPO
             cond = self.evaluate_expr(node.children[1].children[0])
@@ -58,13 +96,29 @@ class VCIGenerator:
                 self.generate(child)
 
     def evaluate_expr(self, node: ASTNode):
+        if node is None:
+            return "?"
+
         if node.type == "LITERAL":
+            return node.value
+        elif node.type == "ID":
             return node.value
         elif node.type in {"OPERACION", "COMPARACION"}:
             left = self.evaluate_expr(node.children[0])
             right = self.evaluate_expr(node.children[1])
             temp = self.new_temp()
-            self.instructions.append(VCIInstruction(node.value, left, right, temp))
+            
+            # Manejar diferentes tipos de operaciones
+            if node.value in {"+", "-", "*", "/"}:
+                # Operaciones aritméticas
+                self.instructions.append(VCIInstruction(node.value, left, right, temp))
+            elif node.value in {"&&", "||"}:
+                # Operaciones lógicas
+                self.instructions.append(VCIInstruction(node.value, left, right, temp))
+            elif node.value in {">", "<", ">=", "<=", "==", "!="}:
+                # Comparaciones
+                self.instructions.append(VCIInstruction(node.value, left, right, temp))
+            
             return temp
         elif node.type == "VALOR":
             return self.evaluate_expr(node.children[0])
