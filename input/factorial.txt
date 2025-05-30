@@ -1,0 +1,17 @@
+programa factorial@;
+variables
+    entero n&, i&, resultado&;
+
+inicio
+    leer(n&);
+    resultado& = 1;
+
+    i& = 1;
+    mientras (i& <= n&) hacer
+    inicio
+        resultado& = resultado& * i&;
+        i& = i& + 1;
+    fin
+
+    escribir(resultado&);
+fin

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QFileDialog, QTableWidget, QTableWidgetItem,
-    QPushButton, QVBoxLayout, QWidget, QLabel, QHBoxLayout,QMessageBox
+    QPushButton, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QMessageBox
 )
 import pandas as pd
 import os
@@ -10,6 +10,8 @@ from core.parser.parser import Parser
 from core.parser.parser_utils import load_tokens_from_csv
 from core.semantic.semantic_analyzer import SemanticAnalyzer
 from core.codegen.vci_generator import VCIGenerator
+from core.codegen.vci_executor import VCIExecutor
+from models.token import Token
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -38,16 +40,19 @@ class MainWindow(QMainWindow):
         self.load_button = QPushButton("Cargar archivo .txt")
         self.load_button.clicked.connect(self.load_file)
 
+        self.run_vci_button = QPushButton("Ejecutar VCI")
+        self.run_vci_button.clicked.connect(self.run_vci)
+
         layout = QVBoxLayout()
         layout.addWidget(self.label)
         layout.addWidget(self.load_button)
+        layout.addWidget(self.run_vci_button)
 
         table_layout = QHBoxLayout()
         table_layout.addWidget(self.token_table)
         table_layout.addWidget(self.error_table)
         table_layout.addWidget(self.syntax_error_table)
         table_layout.addWidget(self.vci_table)
-
 
         layout.addLayout(table_layout)
 
@@ -84,7 +89,6 @@ class MainWindow(QMainWindow):
                     table_widget.setItem(i, j, QTableWidgetItem(str(col)))
 
     def load_vci_table(self, path):
-        import pandas as pd
         if not os.path.exists(path): return
         df = pd.read_csv(path)
         self.vci_table.setRowCount(len(df))
@@ -126,30 +130,61 @@ class MainWindow(QMainWindow):
 
                 if analyzer.errors:
                     for err in analyzer.errors:
-                        print( "Error semántico: {err.message} → {err.value}")
+                        print(f"Error semántico: {err.message} → {err.value}")
                     QMessageBox.information(
                         self,
                         "Error semántico",
-                        "Hubo un error en el analisis sintactico"
+                        "Hubo un error en el análisis semántico."
                     )
 
                 if not analyzer.errors:
                     QMessageBox.information(
                         self,
-                        "Compilacion del Sistema Semantico Exitoso",
-                        "El analisis Semantico se completo Correctamente."
+                        "Compilación del Sistema Semántico Exitosa",
+                        "El análisis semántico se completó correctamente."
                     )
 
             if not parser.errors and not analyzer.errors:
                 vci = VCIGenerator()
                 vci.generate(ast)
+                vci.print_ast_debug(ast)
                 vci.export_to_csv()
                 self.load_vci_table("output/vci.csv")
-                
 
         except Exception as e:
             QMessageBox.critical(
                 self,
                 "Error inesperado",
                 f"Ocurrió un error durante el análisis sintáctico:\n\n{str(e)}"
-        )
+            )
+
+    def run_vci(self):
+        from models.vci_instruction import VCIInstruction
+        vci_path = "output/vci.csv"
+
+        if not os.path.exists(vci_path):
+            QMessageBox.warning(self, "Error", "No se encontró el archivo VCI. Asegúrate de compilar primero.")
+            return
+
+        try:
+            import csv
+            instructions = []
+            with open(vci_path, newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    instructions.append(VCIInstruction(
+                        operation=row['Operación'],
+                        arg1=row['Arg1'],
+                        arg2=row['Arg2'],
+                        result=row['Resultado']
+                    ))
+
+            executor = VCIExecutor(instructions)
+            executor.execute()
+            executor.export_execution_table("output/vci_execution.csv")
+            executor.export_variables("output/final_vars.csv")
+
+            QMessageBox.information(self, "VCI ejecutado", "La ejecución del VCI fue exitosa.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error en VCI", f"Ocurrió un error al ejecutar el VCI:\n{str(e)}")
+

@@ -1,5 +1,5 @@
-from models.ast_node import ASTNode
 from models.vci_instruction import VCIInstruction
+from models.ast_node import ASTNode
 
 class VCIGenerator:
     def __init__(self):
@@ -10,21 +10,28 @@ class VCIGenerator:
     def generate(self, node: ASTNode):
         if node.type == "ASIGNACION":
             target = node.children[0].value
-            expr = node.children[1].children[0]
-            result = self.evaluate_expr(expr)
+            value_expr = node.children[1]
+            result = self.evaluate_expr(value_expr.children[0])
             self.instructions.append(VCIInstruction("=", result, "", target))
+
+        elif node.type == "LEER":
+            var = node.children[0].value
+            self.instructions.append(VCIInstruction("LEER", "", "", var))
+
+        elif node.type == "ESCRIBIR":
+            val = self.evaluate_expr(node.children[0].children[0])
+            self.instructions.append(VCIInstruction("ESCRIBIR", val, "", ""))
 
         elif node.type == "SI":
             cond = self.evaluate_expr(node.children[0].children[0])
             label_else = self.new_label()
             label_end = self.new_label()
-
             self.instructions.append(VCIInstruction("IF_FALSE", cond, "", f"GOTO {label_else}"))
             self.generate(node.children[1])  # BLOQUE_SI
-            if len(node.children) == 3:  # si tiene un BLOQUE_SINO
-                self.instructions.append(VCIInstruction("GOTO", "", "", f"{label_end}"))
+            if len(node.children) == 3:
+                self.instructions.append(VCIInstruction("GOTO", "", "", label_end))
                 self.instructions.append(VCIInstruction("LABEL", "", "", label_else))
-                self.generate(node.children[2])
+                self.generate(node.children[2])  # BLOQUE_SINO
                 self.instructions.append(VCIInstruction("LABEL", "", "", label_end))
             else:
                 self.instructions.append(VCIInstruction("LABEL", "", "", label_else))
@@ -32,22 +39,21 @@ class VCIGenerator:
         elif node.type == "MIENTRAS":
             label_start = self.new_label()
             label_end = self.new_label()
-
             self.instructions.append(VCIInstruction("LABEL", "", "", label_start))
             cond = self.evaluate_expr(node.children[0].children[0])
             self.instructions.append(VCIInstruction("IF_FALSE", cond, "", f"GOTO {label_end}"))
-            self.generate(node.children[1])  # cuerpo
+            self.generate(node.children[1])  # CUERPO
             self.instructions.append(VCIInstruction("GOTO", "", "", label_start))
             self.instructions.append(VCIInstruction("LABEL", "", "", label_end))
 
         elif node.type == "REPETIR":
             label_start = self.new_label()
             self.instructions.append(VCIInstruction("LABEL", "", "", label_start))
-            self.generate(node.children[0])  # cuerpo
+            self.generate(node.children[0])  # CUERPO
             cond = self.evaluate_expr(node.children[1].children[0])
             self.instructions.append(VCIInstruction("IF_FALSE", cond, "", f"GOTO {label_start}"))
 
-        elif node.type in {"INSTRUCCIONES", "BLOQUE"}:
+        elif node.type in {"INSTRUCCIONES", "BLOQUE", "BLOQUE_SI", "BLOQUE_SINO", "CUERPO", "PROGRAMA"}:
             for child in node.children:
                 self.generate(child)
 
@@ -60,6 +66,10 @@ class VCIGenerator:
             temp = self.new_temp()
             self.instructions.append(VCIInstruction(node.value, left, right, temp))
             return temp
+        elif node.type == "VALOR":
+            return self.evaluate_expr(node.children[0])
+        elif node.type == "EXPR":
+            return self.evaluate_expr(node.children[0])
         return "?"
 
     def new_temp(self):
@@ -79,3 +89,8 @@ class VCIGenerator:
             writer.writerow(["Operación", "Arg1", "Arg2", "Resultado"])
             for i in self.instructions:
                 writer.writerow([i.operation, i.arg1, i.arg2, i.result])
+
+    def print_ast_debug(self, node, indent=0):
+        print("  " * indent + f"{node.type}: {node.value}")
+        for child in node.children:
+            self.print_ast_debug(child, indent + 1)

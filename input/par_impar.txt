@@ -1,0 +1,17 @@
+programa parimpar@;
+variables
+    entero x&, residuo&;
+
+inicio
+    leer(x&);
+    residuo& = x& % 2;
+
+    si (residuo& == 0) entonces
+    inicio
+        escribir("par");
+    fin
+    sino
+    inicio
+        escribir("impar");
+    fin
+fin

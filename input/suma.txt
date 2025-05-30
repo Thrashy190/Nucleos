@@ -1,0 +1,21 @@
+programa sumapares@;
+variables
+    entero n&, m&, suma&, i&;
+
+inicio
+    leer(n&);
+    leer(m&);
+    suma& = 0;
+
+    i& = n&;
+    mientras (i& <= m&) hacer
+    inicio
+        si (i& % 2 == 0) entonces
+        inicio
+            suma& = suma& + i&;
+        fin
+        i& = i& + 1;
+    fin
+
+    escribir(suma&);
+fin
